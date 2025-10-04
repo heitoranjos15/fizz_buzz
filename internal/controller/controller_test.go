@@ -18,8 +18,8 @@ type MockCore struct {
 	mock.Mock
 }
 
-func (m *MockCore) ParseMessage(numbers []int, values []string, limit int) (string, error) {
-	args := m.Called(numbers, values, limit)
+func (m *MockCore) ProcessMessage(words []string, values []int, limit int) (string, error) {
+	args := m.Called(words, values, limit)
 	return args.String(0), args.Error(1)
 }
 
@@ -41,12 +41,12 @@ func TestFizzBuzzController(t *testing.T) {
 		{
 			name: "Valid request",
 			input: controller.FizzBuzzRequest{
-				Numbers: []int{3, 5},
-				Values:  []string{"Fizz", "Buzz"},
-				Limit:   5,
+				Multiples: []int{3, 5},
+				Words:     []string{"Fizz", "Buzz"},
+				Limit:     5,
 			},
 			mockSetup: func() {
-				mockCore.On("ParseMessage", []int{3, 5}, []string{"Fizz", "Buzz"}, 5).
+				mockCore.On("ProcessMessage", []int{3, 5}, []string{"Fizz", "Buzz"}, 5).
 					Return("[1 2 Fizz 4 Buzz]", nil).Once()
 			},
 			expectedStatus: 200,
@@ -55,34 +55,34 @@ func TestFizzBuzzController(t *testing.T) {
 		{
 			name: "Invalid JSON",
 			input: controller.FizzBuzzRequest{
-				Numbers: []int{3, 5},
-				Values:  []string{"Fizz", "Buzz"},
-				Limit:   0, // Invalid limit
+				Multiples: []int{3, 5},
+				Words:     []string{"Fizz", "Buzz"},
+				Limit:     0, // Invalid limit
 			},
 			mockSetup:      func() {},
 			expectedStatus: 400,
-			expectedBody:   gin.H{"error": "params numbers, value, limit are required and must be valid"},
+			expectedBody:   gin.H{"error": "params multiples, words and limit are required and must be valid"},
 		},
 		{
 			name: "Mismatched array lengths",
 			input: controller.FizzBuzzRequest{
-				Numbers: []int{3, 5},
-				Values:  []string{"Fizz"},
-				Limit:   5,
+				Multiples: []int{3, 5},
+				Words:     []string{"Fizz"},
+				Limit:     5,
 			},
 			mockSetup:      func() {},
 			expectedStatus: 400,
-			expectedBody:   gin.H{"error": "numbers and value arrays must have the same length"},
+			expectedBody:   gin.H{"error": "multiples and words arrays must have the same length"},
 		},
 		{
 			name: "Core error",
 			input: controller.FizzBuzzRequest{
-				Numbers: []int{3, 5},
-				Values:  []string{"Fizz", "Buzz"},
-				Limit:   5,
+				Multiples: []int{3, 5},
+				Words:     []string{"Fizz", "Buzz"},
+				Limit:     5,
 			},
 			mockSetup: func() {
-				mockCore.On("ParseMessage", []int{3, 5}, []string{"Fizz", "Buzz"}, 5).
+				mockCore.On("ProcessMessage", []int{3, 5}, []string{"Fizz", "Buzz"}, 5).
 					Return("", assert.AnError).Once()
 			},
 			expectedStatus: 500,

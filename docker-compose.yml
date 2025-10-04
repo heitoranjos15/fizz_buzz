@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: fizzbuzz_app
+    ports:
+      - "8067:8067"
+    environment:
+      - DB_HOST=localhost
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=fizzbuzz
+      - MONGO_URI=mongodb://mongo:27017
+      - MONGO_DB=fizzbuzz
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6.0
+    container_name: fizzbuzz_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
