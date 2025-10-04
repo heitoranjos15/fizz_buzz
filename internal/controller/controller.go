@@ -5,9 +5,9 @@ import (
 )
 
 type FizzBuzzRequest struct {
-	Numbers []int    `json:"numbers" binding:"required,dive,gt=0"`
-	Value   []string `json:"value" binding:"required,dive,notblank"`
-	Limit   int      `json:"limit" binding:"required,gt=0"`
+	Multiples []int    `json:"multiples"`
+	Words     []string `json:"words"`
+	Limit     int      `json:"limit"`
 }
 
 type FizzBuzzController struct {
@@ -27,16 +27,16 @@ func NewFizzBuzzController(core Core) *FizzBuzzController {
 func (f FizzBuzzController) FizzBuzz(ctx *gin.Context) {
 	var req FizzBuzzRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(400, gin.H{"error": err.Error()})
+		ctx.JSON(400, gin.H{"error": "params multiples, words, limit are required and must be valid"})
 		return
 	}
 
-	if len(req.Numbers) != len(req.Value) {
+	if len(req.Multiples) != len(req.Words) {
 		ctx.JSON(400, gin.H{"error": "numbers and value arrays must have the same length"})
 		return
 	}
 
-	result, err := f.core.ParseMessage(req.Numbers, req.Value, req.Limit)
+	result, err := f.core.ParseMessage(req.Multiples, req.Words, req.Limit)
 	if err != nil {
 		ctx.JSON(500, gin.H{"error": err.Error()})
 		return

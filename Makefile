@@ -1,6 +1,6 @@
 # Makefile for Go API with Gin
 # Variables
-APP_NAME = my-go-api
+APP_NAME = fizzbuzz
 DOCKER_IMAGE = $(APP_NAME):latest
 PORT = 8080
 

@@ -21,5 +21,5 @@ func main() {
 
 	r.POST("/fizzbuzz", controller.FizzBuzz)
 
-	r.Run(":8080")
+	r.Run(":8067")
 }
