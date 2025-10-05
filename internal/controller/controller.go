@@ -17,11 +17,6 @@ type FizzBuzzRequest struct {
 	Limit     int      `json:"limit"`
 }
 
-type stats struct {
-	Word  string `json:"word"`
-	Count int    `json:"count"`
-}
-
 type StatResp struct {
 	TotalRequests int                     `json:"total_requests"`
 	RequestStats  []types.StatsParameters `json:"request_stats"`
@@ -34,7 +29,7 @@ type FizzBuzzController struct {
 type Core interface {
 	ProcessMessage(words []string, multiples []int, limit int) (string, error)
 	GetStatsParameters() ([]types.StatsParameters, error)
-	GetStatsWords() ([]types.StatsByKeyResult, error)
+	GetStatsWords() ([]types.StatsWordsResult, error)
 	GetTotalRequests() (int, error)
 }
 
@@ -50,11 +45,13 @@ func (f FizzBuzzController) FizzBuzz(ctx *gin.Context) {
 	err := req.loadQueryParams(ctx)
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": err.Error()})
+		return
 	}
 
 	err = req.validate()
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": err.Error()})
+		return
 	}
 
 	result, err := f.core.ProcessMessage(req.Words, req.Multiples, req.Limit)

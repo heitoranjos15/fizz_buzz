@@ -10,7 +10,7 @@ import (
 type repo[T any] interface {
 	SaveMessage(words []string, multiples []int, limit int) error
 	GetStatsParameters() ([]types.StatsParameters, error)
-	GetStatsWords() ([]types.StatsByKeyResult, error)
+	GetStatsWords() ([]types.StatsWordsResult, error)
 	GetTotalRequests() (int, error)
 }
 
@@ -62,7 +62,7 @@ func (c *Core[T]) GetStatsParameters() ([]types.StatsParameters, error) {
 	return stats, nil
 }
 
-func (c *Core[T]) GetStatsWords() ([]types.StatsByKeyResult, error) {
+func (c *Core[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
 	stats, err := c.db.GetStatsWords()
 	if err != nil {
 		log.Printf("Error retrieving words stats from database: %v", err)

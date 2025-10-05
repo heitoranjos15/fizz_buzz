@@ -71,8 +71,8 @@ func (r *MongoRepo[T]) GetStatsParameters() ([]types.StatsParameters, error) {
 	return results, nil
 }
 
-func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsByKeyResult, error) {
-	var statsList []types.StatsByKeyResult
+func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
+	var statsList []types.StatsWordsResult
 
 	pipeline := mongo.Pipeline{
 		bson.D{{Key: "$unwind", Value: "$words"}},
@@ -102,7 +102,7 @@ func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsByKeyResult, error) {
 	}
 
 	for _, result := range results {
-		var stat types.StatsByKeyResult
+		var stat types.StatsWordsResult
 		stat.FromBson(result)
 		statsList = append(statsList, stat)
 	}

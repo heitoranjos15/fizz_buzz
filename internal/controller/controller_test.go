@@ -1,11 +1,10 @@
 package controller_test
 
 import (
-	"bytes"
+	"context"
 	"encoding/json"
 	"fizzbuzz/internal/controller"
 	"fizzbuzz/internal/types"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -25,14 +24,14 @@ func (m *MockCore) ProcessMessage(words []string, values []int, limit int) (stri
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockCore) GetStatsWords() ([]types.StatsByKeyResult, error) {
+func (m *MockCore) GetStatsWords() ([]types.StatsWordsResult, error) {
 	args := m.Called()
-	return args.Get(0).([]types.StatsByKeyResult), args.Error(1)
+	return args.Get(0).([]types.StatsWordsResult), args.Error(1)
 }
 
-func (m *MockCore) GetStatsParameters() (types.StatsParameters, error) {
+func (m *MockCore) GetStatsParameters() ([]types.StatsParameters, error) {
 	args := m.Called()
-	return args.Get(0).(types.StatsParameters), args.Error(1)
+	return args.Get(0).([]types.StatsParameters), args.Error(1)
 }
 
 func (m *MockCore) GetTotalRequests() (int, error) {
@@ -41,16 +40,16 @@ func (m *MockCore) GetTotalRequests() (int, error) {
 }
 
 func TestFizzBuzzController(t *testing.T) {
-	// Set gin to test mode
+	ctx := context.Background()
 	gin.SetMode(gin.TestMode)
 
-	// Create a new mock Core
 	mockCore := new(MockCore)
 	testController := controller.NewFizzBuzzController(mockCore)
 
 	tests := []struct {
 		name           string
 		input          controller.FizzBuzzRequest
+		queryParams    string
 		mockSetup      func()
 		expectedStatus int
 		expectedBody   any
@@ -62,12 +61,13 @@ func TestFizzBuzzController(t *testing.T) {
 				Words:     []string{"Fizz", "Buzz"},
 				Limit:     5,
 			},
+			queryParams: "multiples=3,5&words=Fizz,Buzz&limit=5",
 			mockSetup: func() {
-				mockCore.On("ProcessMessage", mock.Anything, mock.Anything, mock.Anything).
+				mockCore.On("ProcessMessage", []string{"Fizz", "Buzz"}, []int{3, 5}, 5).
 					Return("[1 2 Fizz 4 Buzz]", nil).Once()
 			},
 			expectedStatus: 200,
-			expectedBody:   "[1 2 Fizz 4 Buzz]",
+			expectedBody:   gin.H{"result": "[1 2 Fizz 4 Buzz]"},
 		},
 		{
 			name: "Invalid JSON",
@@ -76,6 +76,7 @@ func TestFizzBuzzController(t *testing.T) {
 				Words:     []string{"Fizz", "Buzz"},
 				Limit:     0, // Invalid limit
 			},
+			queryParams:    "multiples=3,5&words=Fizz,Buzz&limit=0",
 			mockSetup:      func() {},
 			expectedStatus: 400,
 			expectedBody:   gin.H{"error": "params multiples, words and limit are required and must be valid"},
@@ -87,6 +88,7 @@ func TestFizzBuzzController(t *testing.T) {
 				Words:     []string{"Fizz"},
 				Limit:     5,
 			},
+			queryParams:    "multiples=3,5&words=Fizz&limit=5",
 			mockSetup:      func() {},
 			expectedStatus: 400,
 			expectedBody:   gin.H{"error": "multiples and words arrays must have the same length"},
@@ -98,8 +100,9 @@ func TestFizzBuzzController(t *testing.T) {
 				Words:     []string{"Fizz", "Buzz"},
 				Limit:     5,
 			},
+			queryParams: "multiples=3,5&words=Fizz,Buzz&limit=5",
 			mockSetup: func() {
-				mockCore.On("ProcessMessage", []int{3, 5}, []string{"Fizz", "Buzz"}, 5).
+				mockCore.On("ProcessMessage", []string{"Fizz", "Buzz"}, []int{3, 5}, 5).
 					Return("", assert.AnError).Once()
 			},
 			expectedStatus: 500,
@@ -109,38 +112,22 @@ func TestFizzBuzzController(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Setup mock
+			r := gin.New()
+			r.POST("/fizzbuzz", testController.FizzBuzz)
+
 			tt.mockSetup()
 
-			// Create a new gin context
 			w := httptest.NewRecorder()
-			c, _ := gin.CreateTestContext(w)
+			url := "/fizzbuzz?" + tt.queryParams
+			req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
 
-			// Create JSON body
-			body, _ := json.Marshal(tt.input)
-			params := "multiples=3,5&words=Fizz,Buzz&limit=5"
-			c.Request, _ = http.NewRequest("POST", fmt.Sprintf("/fizzbuzz?%s", params), bytes.NewBuffer(body))
-			c.Request.Header.Set("Content-Type", "application/json")
-			c.Request.Header.Set("Accept", "application/json")
+			r.ServeHTTP(w, req)
 
-			// Call the controller
-			testController.FizzBuzz(c)
-
-			// Assert results
 			assert.Equal(t, tt.expectedStatus, w.Code)
-			var actualBody any
-			if tt.expectedStatus == 200 {
-				var result string
-				json.Unmarshal(w.Body.Bytes(), &result)
-				actualBody = result
-			} else {
-				var result gin.H
-				json.Unmarshal(w.Body.Bytes(), &result)
-				actualBody = result
-			}
+			var actualBody gin.H
+			json.Unmarshal(w.Body.Bytes(), &actualBody)
 			assert.Equal(t, tt.expectedBody, actualBody)
 
-			// Verify mock expectations
 			mockCore.AssertExpectations(t)
 		})
 	}
@@ -163,25 +150,24 @@ func TestStats(t *testing.T) {
 		{
 			name: "Valid stats request",
 			mockSetup: func() {
-				mockCore.On("GetStats").Return([]types.StatsByKeyResult{
-					{Key: "Fizz", Count: 10},
-					{Key: "Buzz", Count: 5},
-				}, nil).Once()
+				mockCore.On("GetStatsParameters").Return(
+					[]types.StatsParameters{
+						{Words: []string{"Fizz", "Buzz"}, Multiples: []int{3, 5}, Limit: 15, TotalRequests: 5},
+					}, nil).Once()
 				mockCore.On("GetTotalRequests").Return(10, nil).Once()
 			},
 			expectedStatus: 200,
 			expectedBody: controller.StatResp{
 				TotalRequests: 10,
-				Stats: []types.StatsByKeyResult{
-					{Key: "Fizz", Count: 10},
-					{Key: "Buzz", Count: 5},
+				RequestStats: []types.StatsParameters{
+					{Words: []string{"Fizz", "Buzz"}, Multiples: []int{3, 5}, Limit: 15, TotalRequests: 5},
 				},
 			},
 		},
 		{
 			name: "Core error on stats",
 			mockSetup: func() {
-				mockCore.On("GetStats").Return(nil, assert.AnError).Once()
+				mockCore.On("GetStatsParameters").Return([]types.StatsParameters{}, assert.AnError).Once()
 				mockCore.On("GetTotalRequests").Return(0, nil).Once()
 			},
 			expectedStatus: 500,
