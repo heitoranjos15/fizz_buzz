@@ -31,6 +31,7 @@ func main() {
 	r := gin.Default()
 
 	r.POST("/fizzbuzz", controller.FizzBuzz)
+	r.GET("/stats", controller.Stats)
 
 	r.Run(":8067")
 }

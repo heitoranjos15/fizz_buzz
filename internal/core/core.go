@@ -2,13 +2,16 @@ package core
 
 import (
 	"errors"
+	"fizzbuzz/internal/types"
 	"fmt"
 	"log"
 )
 
 type repo[T any] interface {
 	SaveMessage(words []string, multiples []int, limit int) error
-	GetStats() (map[string]any, error)
+	GetStatsParameters() ([]types.StatsParameters, error)
+	GetStatsWords() ([]types.StatsByKeyResult, error)
+	GetTotalRequests() (int, error)
 }
 
 type Core[T any] struct {
@@ -50,39 +53,29 @@ func (c *Core[T]) parseMessage(words []string, multiples []int, limit int) strin
 	return fmt.Sprintf("%v", result)
 }
 
-type Stats struct {
-	Word  string `json:"word"`
-	Count int    `json:"count"`
-}
-
-type StatResp struct {
-	TotalRequests int     `json:"total_requests"`
-	Stats         []Stats `json:"stats"`
-}
-
-func (c *Core[T]) GetStats() (StatResp, error) {
-	dbResp, err := c.db.GetStats()
+func (c *Core[T]) GetStatsParameters() ([]types.StatsParameters, error) {
+	stats, err := c.db.GetStatsParameters()
 	if err != nil {
-		return StatResp{}, err
+		log.Printf("Error retrieving stats from database: %v", err)
+		return stats, errors.New("could not retrieve stats from database")
 	}
-	// check dbResp has keys "words" and "count"
-	if dbResp == nil {
-		return StatResp{}, errors.New("no stats found")
-	}
-	wordsArray, ok := dbResp["words"].(any)
-	if !ok {
-		return StatResp{}, errors.New("invalid stats format")
-	}
-	count, ok := dbResp["count"].(int32)
-	if !ok {
-		return StatResp{}, errors.New("invalid stats format")
-	}
-	stats := StatResp{
-		TotalRequests: int(count),
-		Stats: []Stats{
-			{Word: fmt.Sprintf("%v", wordsArray), Count: int(count)},
-		},
-	}
-
 	return stats, nil
+}
+
+func (c *Core[T]) GetStatsWords() ([]types.StatsByKeyResult, error) {
+	stats, err := c.db.GetStatsWords()
+	if err != nil {
+		log.Printf("Error retrieving words stats from database: %v", err)
+		return stats, errors.New(fmt.Sprintf("could not retrieve words stats from database"))
+	}
+	return stats, nil
+}
+
+func (c *Core[T]) GetTotalRequests() (int, error) {
+	total, err := c.db.GetTotalRequests()
+	if err != nil {
+		log.Printf("Error retrieving total requests from database: %v", err)
+		return 0, errors.New("could not retrieve total requests from database")
+	}
+	return total, nil
 }

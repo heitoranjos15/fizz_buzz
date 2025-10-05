@@ -8,10 +8,13 @@ down:
 	docker-compose down
 
 build:
-	docker build -t my-go-app .
+	docker build -t fizzbuzz .
 
 run:
-	docker-compose up -d
+	docker-compose up ${APP_NAME}
+
+logs:
+	docker-compose logs -f ${APP_NAME}
 
 test:
 	go test ./... -v

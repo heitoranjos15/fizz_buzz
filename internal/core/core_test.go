@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"fizzbuzz/internal/core"
+	"fizzbuzz/internal/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -12,9 +13,24 @@ type mockRepo struct {
 	mock.Mock
 }
 
-func (m *mockRepo) SaveMessage(words []int, multiples []string, limit int) error {
+func (m *mockRepo) SaveMessage(words []string, multiples []int, limit int) error {
 	args := m.Called(words, multiples, limit)
 	return args.Error(0)
+}
+
+func (m *mockRepo) GetStatsWords() ([]types.StatsWordsResult, error) {
+	args := m.Called()
+	return args.Get(0).([]types.StatsWordsResult), args.Error(1)
+}
+
+func (m *mockRepo) GetStatsParameters() ([]types.StatsParameters, error) {
+	args := m.Called()
+	return args.Get(0).([]types.StatsParameters), args.Error(1)
+}
+
+func (m *mockRepo) GetTotalRequests() (int, error) {
+	args := m.Called()
+	return args.Int(0), args.Error(1)
 }
 
 func TestProcessMessage(t *testing.T) {
@@ -73,7 +89,7 @@ func TestProcessMessage(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repo.On("SaveMessage", tt.multiples, tt.words, tt.limit).Return(nil).Once()
+			repo.On("SaveMessage", tt.words, tt.multiples, tt.limit).Return(nil).Once()
 			result, err := coreTest.ProcessMessage(tt.words, tt.multiples, tt.limit)
 			assert.Equal(t, tt.err, err)
 			assert.Equal(t, tt.expected, result)

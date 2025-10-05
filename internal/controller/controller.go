@@ -2,16 +2,29 @@ package controller
 
 import (
 	"errors"
+	"fizzbuzz/internal/types"
 	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
+var errorStatsNotFound = errors.New("no stats found")
+
 type FizzBuzzRequest struct {
 	Multiples []int    `json:"multiples"`
 	Words     []string `json:"words"`
 	Limit     int      `json:"limit"`
+}
+
+type stats struct {
+	Word  string `json:"word"`
+	Count int    `json:"count"`
+}
+
+type StatResp struct {
+	TotalRequests int                     `json:"total_requests"`
+	RequestStats  []types.StatsParameters `json:"request_stats"`
 }
 
 type FizzBuzzController struct {
@@ -20,7 +33,9 @@ type FizzBuzzController struct {
 
 type Core interface {
 	ProcessMessage(words []string, multiples []int, limit int) (string, error)
-	GetStats() (string, error)
+	GetStatsParameters() ([]types.StatsParameters, error)
+	GetStatsWords() ([]types.StatsByKeyResult, error)
+	GetTotalRequests() (int, error)
 }
 
 func NewFizzBuzzController(core Core) *FizzBuzzController {
@@ -31,6 +46,7 @@ func NewFizzBuzzController(core Core) *FizzBuzzController {
 
 func (f FizzBuzzController) FizzBuzz(ctx *gin.Context) {
 	var req FizzBuzzRequest
+
 	err := req.loadQueryParams(ctx)
 	if err != nil {
 		ctx.JSON(400, gin.H{"error": err.Error()})
@@ -50,18 +66,25 @@ func (f FizzBuzzController) FizzBuzz(ctx *gin.Context) {
 	ctx.JSON(200, gin.H{"result": result})
 }
 
-var errorStatsNotFound = errors.New("no stats found")
-
 func (f FizzBuzzController) Stats(ctx *gin.Context) {
-	stats, err := f.core.GetStats()
+	stats, err := f.core.GetStatsParameters()
 	if err != nil {
-		if !errors.Is(err, errorStatsNotFound) {
-			ctx.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
 	}
 
-	ctx.JSON(200, gin.H{"stats": stats})
+	totalRequests, err := f.core.GetTotalRequests()
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	statsResp := StatResp{
+		TotalRequests: totalRequests,
+		RequestStats:  stats,
+	}
+
+	ctx.JSON(200, statsResp)
 }
 
 func (fbr *FizzBuzzRequest) loadQueryParams(ctx *gin.Context) error {

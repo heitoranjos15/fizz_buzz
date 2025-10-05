@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
@@ -33,4 +34,8 @@ func (r *Repo[T]) SaveMessage(words []string, multiples []int, limit int) error 
 		return err
 	}
 	return nil
+}
+
+func (r *Repo[T]) GetStatsByKey() (map[string]any, error) {
+	return map[string]any{}, errors.New("not implemented")
 }
