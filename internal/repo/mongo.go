@@ -79,13 +79,13 @@ func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
 		bson.D{{
 			Key: "$group",
 			Value: bson.D{
-				{Key: "_id", Value: bson.D{{Key: "words", Value: "$words"}}},
+				{Key: "_id", Value: "$words"},
 				{Key: "count", Value: bson.D{{Key: "$sum", Value: 1}}},
 			},
 		}},
 		bson.D{{Key: "$sort", Value: bson.D{{Key: "count", Value: -1}}}},
 		bson.D{{Key: "$project", Value: bson.D{
-			{Key: "words", Value: "_id"},
+			{Key: "word", Value: "$_id"},
 			{Key: "count", Value: 1},
 			{Key: "_id", Value: 0},
 		}}},
@@ -96,15 +96,8 @@ func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
 	}
 	defer cursor.Close(nil)
 
-	var results []bson.M
-	if err = cursor.All(nil, &results); err != nil {
+	if err = cursor.All(nil, &statsList); err != nil {
 		return statsList, err
-	}
-
-	for _, result := range results {
-		var stat types.StatsWordsResult
-		stat.FromBson(result)
-		statsList = append(statsList, stat)
 	}
 
 	return statsList, nil

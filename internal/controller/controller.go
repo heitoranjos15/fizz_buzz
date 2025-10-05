@@ -18,8 +18,9 @@ type FizzBuzzRequest struct {
 }
 
 type StatResp struct {
-	TotalRequests int                     `json:"total_requests"`
-	RequestStats  []types.StatsParameters `json:"request_stats"`
+	TotalRequests int                      `json:"total_requests"`
+	RequestStats  []types.StatsParameters  `json:"request_stats"`
+	WordsStats    []types.StatsWordsResult `json:"words_stats"`
 }
 
 type FizzBuzzController struct {
@@ -76,9 +77,16 @@ func (f FizzBuzzController) Stats(ctx *gin.Context) {
 		return
 	}
 
+	wordsStats, err := f.core.GetStatsWords()
+	if err != nil {
+		ctx.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
 	statsResp := StatResp{
 		TotalRequests: totalRequests,
 		RequestStats:  stats,
+		WordsStats:    wordsStats,
 	}
 
 	ctx.JSON(200, statsResp)
