@@ -33,7 +33,7 @@ func main() {
 	r.POST("/fizzbuzz", controller.FizzBuzz)
 	r.GET("/stats", controller.Stats)
 
-	r.Run(":8067")
+	r.Run(":8080")
 }
 
 func initMongoDB(uri, dbName string) mongo.Collection {

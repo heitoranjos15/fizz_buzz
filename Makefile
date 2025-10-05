@@ -1,5 +1,4 @@
 DOCKER_IMAGE = $(APP_NAME):latest
-PORT = 8080
 
 up:
 	docker-compose up --build
