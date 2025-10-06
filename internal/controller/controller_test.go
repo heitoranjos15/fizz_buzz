@@ -155,10 +155,18 @@ func TestStats(t *testing.T) {
 						{Words: []string{"Fizz", "Buzz"}, Multiples: []int{3, 5}, Limit: 15, TotalRequests: 5},
 					}, nil).Once()
 				mockCore.On("GetTotalRequests").Return(10, nil).Once()
+				mockCore.On("GetStatsWords").Return([]types.StatsWordsResult{
+					{Word: "Fizz", Total: 7},
+					{Word: "Buzz", Total: 5},
+				}, nil).Once()
 			},
 			expectedStatus: 200,
 			expectedBody: controller.StatResp{
 				TotalRequests: 10,
+				WordsStats: []types.StatsWordsResult{
+					{Word: "Fizz", Total: 7},
+					{Word: "Buzz", Total: 5},
+				},
 				RequestStats: []types.StatsParameters{
 					{Words: []string{"Fizz", "Buzz"}, Multiples: []int{3, 5}, Limit: 15, TotalRequests: 5},
 				},
@@ -168,6 +176,7 @@ func TestStats(t *testing.T) {
 			name: "Core error on stats",
 			mockSetup: func() {
 				mockCore.On("GetStatsParameters").Return([]types.StatsParameters{}, assert.AnError).Once()
+				mockCore.On("GetStatsWords").Return([]types.StatsWordsResult{}, nil).Once()
 				mockCore.On("GetTotalRequests").Return(0, nil).Once()
 			},
 			expectedStatus: 500,

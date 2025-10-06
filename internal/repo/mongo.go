@@ -87,7 +87,7 @@ func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
 		bson.D{{Key: "$project", Value: bson.D{
 			{Key: "word", Value: "$_id"},
 			{Key: "count", Value: 1},
-			{Key: "_id", Value: 0},
+			{Key: "_id", Value: 1},
 		}}},
 	}
 	cursor, err := r.conn.Aggregate(nil, pipeline)
