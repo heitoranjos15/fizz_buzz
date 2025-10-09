@@ -35,7 +35,7 @@ func (m *mockRepo) GetTotalRequests() (int, error) {
 
 func TestProcessMessage(t *testing.T) {
 	repo := new(mockRepo)
-	coreTest := core.NewCore[any](repo)
+	coreTest := core.NewCore(repo)
 
 	tests := []struct {
 		name      string

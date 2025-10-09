@@ -23,9 +23,12 @@ func main() {
 	cfg := loadEnv()
 
 	mongoDB := initMongoDB(cfg.MongoURI, cfg.MongoDB)
-	repository := repo.NewMongoRepo[mongo.Collection]("fizzbuzz_records", &mongoDB)
+	repository := repo.NewMongoRepo("fizzbuzz_records", &mongoDB)
 
-	core := core.NewCore[mongo.Collection](repository)
+	// conn := initSQLDB(cfg.DBUser, cfg.DBPassword, cfg.DBHost, cfg.DBPort, cfg.DBName)
+	// gormRepository := repo.NewRepo("fizzbuzz_records", nil) // Placeholder for SQL repo if needed
+
+	core := core.NewCore(repository)
 	controller := controller.NewFizzBuzzController(core)
 
 	r := gin.Default()
@@ -50,6 +53,11 @@ func initMongoDB(uri, dbName string) mongo.Collection {
 
 	return *client.Database(dbName).Collection("fizzbuzz_records")
 }
+
+// func initSQLDB(user, password, host, port, dbName string) interface{} {
+// 	// Placeholder for SQL DB initialization if needed
+// 	return nil
+// }
 
 type Config struct {
 	DBHost     string

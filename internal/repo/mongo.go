@@ -7,7 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type MongoRepo[T any] struct {
+type MongoRepo struct {
 	collectionName string
 	conn           *mongo.Collection
 }
@@ -18,11 +18,11 @@ type FizzBuzzRecord struct {
 	Limit     int      `bson:"limit"`
 }
 
-func NewMongoRepo[T any](collectionName string, db *mongo.Collection) *MongoRepo[T] {
-	return &MongoRepo[T]{collectionName: collectionName, conn: db}
+func NewMongoRepo(collectionName string, db *mongo.Collection) *MongoRepo {
+	return &MongoRepo{collectionName: collectionName, conn: db}
 }
 
-func (r *MongoRepo[T]) SaveMessage(words []string, multiples []int, limit int) error {
+func (r *MongoRepo) SaveMessage(words []string, multiples []int, limit int) error {
 	record := FizzBuzzRecord{
 		Words:     words,
 		Multiples: multiples,
@@ -36,7 +36,7 @@ func (r *MongoRepo[T]) SaveMessage(words []string, multiples []int, limit int) e
 	return nil
 }
 
-func (r *MongoRepo[T]) GetStatsParameters() ([]types.StatsParameters, error) {
+func (r *MongoRepo) GetStatsParameters() ([]types.StatsParameters, error) {
 	var results []types.StatsParameters
 
 	pipeline := mongo.Pipeline{
@@ -71,7 +71,7 @@ func (r *MongoRepo[T]) GetStatsParameters() ([]types.StatsParameters, error) {
 	return results, nil
 }
 
-func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
+func (r *MongoRepo) GetStatsWords() ([]types.StatsWordsResult, error) {
 	var statsList []types.StatsWordsResult
 
 	pipeline := mongo.Pipeline{
@@ -103,7 +103,7 @@ func (r *MongoRepo[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
 	return statsList, nil
 }
 
-func (r *MongoRepo[T]) GetTotalRequests() (int, error) {
+func (r *MongoRepo) GetTotalRequests() (int, error) {
 	count, err := r.conn.CountDocuments(nil, bson.D{})
 	if err != nil {
 		return 0, err

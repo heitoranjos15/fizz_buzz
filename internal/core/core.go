@@ -7,22 +7,22 @@ import (
 	"log"
 )
 
-type repo[T any] interface {
+type repo interface {
 	SaveMessage(words []string, multiples []int, limit int) error
 	GetStatsParameters() ([]types.StatsParameters, error)
 	GetStatsWords() ([]types.StatsWordsResult, error)
 	GetTotalRequests() (int, error)
 }
 
-type Core[T any] struct {
-	db repo[T]
+type Core struct {
+	db repo
 }
 
-func NewCore[T any](db repo[T]) *Core[T] {
-	return &Core[T]{db: db}
+func NewCore(db repo) *Core {
+	return &Core{db: db}
 }
 
-func (c *Core[T]) ProcessMessage(words []string, multiples []int, limit int) (string, error) {
+func (c *Core) ProcessMessage(words []string, multiples []int, limit int) (string, error) {
 	message := c.parseMessage(words, multiples, limit)
 
 	if err := c.db.SaveMessage(words, multiples, limit); err != nil {
@@ -33,7 +33,7 @@ func (c *Core[T]) ProcessMessage(words []string, multiples []int, limit int) (st
 	return message, nil
 }
 
-func (c *Core[T]) parseMessage(words []string, multiples []int, limit int) string {
+func (c *Core) parseMessage(words []string, multiples []int, limit int) string {
 	result := []string{}
 	for i := 1; i <= limit; i++ {
 		output := ""
@@ -53,7 +53,7 @@ func (c *Core[T]) parseMessage(words []string, multiples []int, limit int) strin
 	return fmt.Sprintf("%v", result)
 }
 
-func (c *Core[T]) GetStatsParameters() ([]types.StatsParameters, error) {
+func (c *Core) GetStatsParameters() ([]types.StatsParameters, error) {
 	stats, err := c.db.GetStatsParameters()
 	if err != nil {
 		log.Printf("Error retrieving stats from database: %v", err)
@@ -62,7 +62,7 @@ func (c *Core[T]) GetStatsParameters() ([]types.StatsParameters, error) {
 	return stats, nil
 }
 
-func (c *Core[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
+func (c *Core) GetStatsWords() ([]types.StatsWordsResult, error) {
 	stats, err := c.db.GetStatsWords()
 	if err != nil {
 		log.Printf("Error retrieving words stats from database: %v", err)
@@ -71,7 +71,7 @@ func (c *Core[T]) GetStatsWords() ([]types.StatsWordsResult, error) {
 	return stats, nil
 }
 
-func (c *Core[T]) GetTotalRequests() (int, error) {
+func (c *Core) GetTotalRequests() (int, error) {
 	total, err := c.db.GetTotalRequests()
 	if err != nil {
 		log.Printf("Error retrieving total requests from database: %v", err)
